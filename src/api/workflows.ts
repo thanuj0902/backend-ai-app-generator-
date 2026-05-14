@@ -23,19 +23,14 @@ export async function listWorkflowsHandler(request: NextRequest) {
     const { searchParams } = request.nextUrl
     const { page, limit, skip } = getPagination(searchParams)
     const projectId = searchParams.get("projectId")
-
     const where: Record<string, any> = { createdById: user.id }
     if (projectId) where.projectId = projectId
-
     const [workflows, total] = await Promise.all([
       prisma.workflow.findMany({ where, skip, take: limit, orderBy: { createdAt: "desc" } }),
       prisma.workflow.count({ where }),
     ])
-
     return buildPaginatedResponse(workflows, total, page, limit)
-  } catch (error) {
-    return handleApiError(error)
-  }
+  } catch (error) { return handleApiError(error) }
 }
 
 export async function createWorkflowHandler(request: NextRequest) {
@@ -45,7 +40,6 @@ export async function createWorkflowHandler(request: NextRequest) {
     const user = await getAuthUser(request)
     const body = await parseBody<{ projectId: string; name: string; trigger?: string; steps: any }>(request)
     requireFields(body, ["projectId", "name", "steps"])
-
     const workflow = await prisma.workflow.create({
       data: {
         projectId: body.projectId,
@@ -55,11 +49,8 @@ export async function createWorkflowHandler(request: NextRequest) {
         createdById: user.id,
       },
     })
-
     return buildSuccessResponse(workflow, 201)
-  } catch (error) {
-    return handleApiError(error)
-  }
+  } catch (error) { return handleApiError(error) }
 }
 
 export async function getWorkflowHandler(request: NextRequest, workflowId: string) {
@@ -69,9 +60,7 @@ export async function getWorkflowHandler(request: NextRequest, workflowId: strin
     const user = await getAuthUser(request)
     const workflow = await getOwnedWorkflow(workflowId, user.id)
     return buildSuccessResponse(workflow)
-  } catch (error) {
-    return handleApiError(error)
-  }
+  } catch (error) { return handleApiError(error) }
 }
 
 export async function updateWorkflowHandler(request: NextRequest, workflowId: string) {
@@ -81,18 +70,14 @@ export async function updateWorkflowHandler(request: NextRequest, workflowId: st
     const user = await getAuthUser(request)
     await getOwnedWorkflow(workflowId, user.id)
     const body = await parseBody<{ name?: string; trigger?: string; steps?: any; status?: string }>(request)
-
     const updateData: Record<string, any> = {}
     if (body.name) updateData.name = body.name
     if (body.trigger) updateData.trigger = body.trigger as WorkflowTrigger
     if (body.steps) updateData.steps = body.steps
     if (body.status) updateData.status = body.status
-
     const workflow = await prisma.workflow.update({ where: { id: workflowId }, data: updateData })
     return buildSuccessResponse(workflow)
-  } catch (error) {
-    return handleApiError(error)
-  }
+  } catch (error) { return handleApiError(error) }
 }
 
 export async function deleteWorkflowHandler(request: NextRequest, workflowId: string) {
@@ -103,7 +88,5 @@ export async function deleteWorkflowHandler(request: NextRequest, workflowId: st
     await getOwnedWorkflow(workflowId, user.id)
     await prisma.workflow.delete({ where: { id: workflowId } })
     return buildSuccessResponse({ deleted: true })
-  } catch (error) {
-    return handleApiError(error)
-  }
+  } catch (error) { return handleApiError(error) }
 }

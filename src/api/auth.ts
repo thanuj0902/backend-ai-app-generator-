@@ -12,12 +12,10 @@ export async function getMeHandler(request: NextRequest) {
     requestLogger(request)
     rateLimitMiddleware(request)
     const user = await getAuthUser(request)
-
     const [projectCount, workflowCount] = await Promise.all([
       prisma.project.count({ where: { userId: user.id } }),
       prisma.workflow.count({ where: { createdById: user.id } }),
     ])
-
     return buildSuccessResponse({
       id: user.id,
       email: user.email,
@@ -33,6 +31,7 @@ export async function getMeHandler(request: NextRequest) {
 export async function webhookHandler(request: NextRequest) {
   try {
     requestLogger(request)
+    rateLimitMiddleware(request)
     const payload = await request.json()
     const { type, data } = payload
 
@@ -41,7 +40,6 @@ export async function webhookHandler(request: NextRequest) {
       case "user.updated": {
         const email = data.email_addresses?.[0]?.email_address
         if (!email) return Response.json({ error: "No email" }, { status: 400 })
-
         await prisma.user.upsert({
           where: { clerkId: data.id },
           update: {
@@ -62,12 +60,10 @@ export async function webhookHandler(request: NextRequest) {
         })
         break
       }
-
       case "user.deleted": {
         await prisma.user.deleteMany({ where: { clerkId: data.id } })
         break
       }
-
       case "organization.created":
       case "organization.updated": {
         await prisma.organization.upsert({
@@ -89,7 +85,6 @@ export async function webhookHandler(request: NextRequest) {
         }
         break
       }
-
       case "organizationMembership.created": {
         const user = await prisma.user.findUnique({ where: { clerkId: data.userId } })
         const org = await prisma.organization.findUnique({ where: { slug: data.organization?.slug } })
@@ -103,7 +98,6 @@ export async function webhookHandler(request: NextRequest) {
         break
       }
     }
-
     return Response.json({ received: true })
   } catch (error) {
     return handleApiError(error)

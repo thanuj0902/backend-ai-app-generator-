@@ -7,6 +7,12 @@ export const PAGINATION = {
   MAX_LIMIT: 100,
 }
 
+export const CACHE = {
+  SHORT: 60,
+  MEDIUM: 300,
+  LONG: 3600,
+}
+
 export function getPagination(searchParams: URLSearchParams) {
   const page = Math.max(1, parseInt(searchParams.get("page") || String(PAGINATION.PAGE)))
   const limit = Math.min(
@@ -31,4 +37,18 @@ export function buildPaginatedResponse<T>(data: T[], total: number, page: number
 
 export function buildSuccessResponse<T>(data: T, status: number = 200) {
   return Response.json(data, { status })
+}
+
+export function etagFromData(data: any): string {
+  const hash = JSON.stringify(data)
+  let h = 0
+  for (let i = 0; i < hash.length; i++) {
+    h = ((h << 5) - h + hash.charCodeAt(i)) | 0
+  }
+  return `"${Math.abs(h).toString(36)}"`
+}
+
+export function notModifiedIfMatch(request: Request, etag: string): boolean {
+  const ifNoneMatch = request.headers.get("if-none-match")
+  return ifNoneMatch === etag
 }
