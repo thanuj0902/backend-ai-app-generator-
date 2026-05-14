@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL")
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ProjectStatus {
+  DRAFT
+  GENERATING
+  COMPLETE
+  ERROR
+}
+
+enum WorkflowTrigger {
+  MANUAL
+  ON_CREATE
+  ON_DEPLOY
+  SCHEDULED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizations OrganizationMember[]
+  projects      Project[]
+  workflows     Workflow[]
+
+  @@map("users")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members OrganizationMember[]
+  projects Project[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String         @id @default(cuid())
+  role           MembershipRole @default(MEMBER)
+  joinedAt       DateTime       @default(now())
+  userId         String
+  organizationId String
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("organization_members")
+}
+
+model Project {
+  id             String        @id @default(cuid())
+  name           String
+  slug           String?
+  description    String?
+  status         ProjectStatus @default(DRAFT)
+  userId         String
+  organizationId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  workflows    Workflow[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@map("projects")
+}
+
+model Workflow {
+  id        String          @id @default(cuid())
+  projectId String
+  name      String
+  trigger   WorkflowTrigger @default(MANUAL)
+  steps     Json
+  status    String          @default("active")
+  lastRunAt DateTime?
+  createdById String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@map("workflows")
+}
