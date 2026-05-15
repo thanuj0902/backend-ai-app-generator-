@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { getWorkflowHandler, updateWorkflowHandler, deleteWorkflowHandler } from "@/api/workflows"
+import { getWorkflowHandler, updateWorkflowHandler, deleteWorkflowHandler } from "@/modules/workflows"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return getWorkflowHandler(request, (await params).id)

@@ -42,21 +42,8 @@ export async function webhookHandler(request: NextRequest) {
         if (!email) return Response.json({ error: "No email" }, { status: 400 })
         await prisma.user.upsert({
           where: { clerkId: data.id },
-          update: {
-            email,
-            name: data.first_name
-              ? `${data.first_name} ${data.last_name || ""}`.trim()
-              : data.username || null,
-            avatarUrl: data.image_url || null,
-          },
-          create: {
-            clerkId: data.id,
-            email,
-            name: data.first_name
-              ? `${data.first_name} ${data.last_name || ""}`.trim()
-              : data.username || null,
-            avatarUrl: data.image_url || null,
-          },
+          update: { email, name: data.first_name ? `${data.first_name} ${data.last_name || ""}`.trim() : data.username || null, avatarUrl: data.image_url || null },
+          create: { clerkId: data.id, email, name: data.first_name ? `${data.first_name} ${data.last_name || ""}`.trim() : data.username || null, avatarUrl: data.image_url || null },
         })
         break
       }
@@ -66,11 +53,7 @@ export async function webhookHandler(request: NextRequest) {
       }
       case "organization.created":
       case "organization.updated": {
-        await prisma.organization.upsert({
-          where: { slug: data.slug },
-          update: { name: data.name },
-          create: { name: data.name, slug: data.slug },
-        })
+        await prisma.organization.upsert({ where: { slug: data.slug }, update: { name: data.name }, create: { name: data.name, slug: data.slug } })
         const createdBy = data.created_by || data.public_metadata?.created_by
         if (createdBy) {
           const user = await prisma.user.findUnique({ where: { clerkId: createdBy } })
@@ -78,8 +61,7 @@ export async function webhookHandler(request: NextRequest) {
           if (user && org) {
             await prisma.organizationMember.upsert({
               where: { userId_organizationId: { userId: user.id, organizationId: org.id } },
-              update: { role: "OWNER" },
-              create: { userId: user.id, organizationId: org.id, role: "OWNER" },
+              update: { role: "OWNER" }, create: { userId: user.id, organizationId: org.id, role: "OWNER" },
             })
           }
         }

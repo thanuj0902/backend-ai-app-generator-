@@ -1,20 +1,20 @@
-export { getMeHandler, webhookHandler } from "./auth"
+export { getMeHandler, webhookHandler } from "@/modules/auth"
 export {
   listProjectsHandler,
   createProjectHandler,
   getProjectHandler,
   updateProjectHandler,
   deleteProjectHandler,
-} from "./projects"
+} from "@/modules/projects"
 export {
   listWorkflowsHandler,
   createWorkflowHandler,
   getWorkflowHandler,
   updateWorkflowHandler,
   deleteWorkflowHandler,
-} from "./workflows"
+} from "@/modules/workflows"
 export {
   startGenerationHandler,
   getGenerationHandler,
   listGenerationsHandler,
-} from "./generation"
+} from "@/modules/generation"

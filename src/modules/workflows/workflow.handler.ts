@@ -17,46 +17,32 @@ async function getOwnedWorkflow(workflowId: string, userId: string) {
 
 export async function listWorkflowsHandler(request: NextRequest) {
   try {
-    requestLogger(request)
-    rateLimitMiddleware(request)
+    requestLogger(request); rateLimitMiddleware(request)
     const user = await getAuthUser(request)
     const { searchParams } = request.nextUrl
     const { page, limit, skip } = getPagination(searchParams)
     const projectId = searchParams.get("projectId")
     const where: Record<string, any> = { createdById: user.id }
     if (projectId) where.projectId = projectId
-    const [workflows, total] = await Promise.all([
-      prisma.workflow.findMany({ where, skip, take: limit, orderBy: { createdAt: "desc" } }),
-      prisma.workflow.count({ where }),
-    ])
+    const [workflows, total] = await Promise.all([prisma.workflow.findMany({ where, skip, take: limit, orderBy: { createdAt: "desc" } }), prisma.workflow.count({ where })])
     return buildPaginatedResponse(workflows, total, page, limit)
   } catch (error) { return handleApiError(error) }
 }
 
 export async function createWorkflowHandler(request: NextRequest) {
   try {
-    requestLogger(request)
-    rateLimitMiddleware(request)
+    requestLogger(request); rateLimitMiddleware(request)
     const user = await getAuthUser(request)
     const body = await parseBody<{ projectId: string; name: string; trigger?: string; steps: any }>(request)
     requireFields(body, ["projectId", "name", "steps"])
-    const workflow = await prisma.workflow.create({
-      data: {
-        projectId: body.projectId,
-        name: body.name,
-        trigger: (body.trigger as WorkflowTrigger) || "MANUAL" as WorkflowTrigger,
-        steps: body.steps,
-        createdById: user.id,
-      },
-    })
+    const workflow = await prisma.workflow.create({ data: { projectId: body.projectId, name: body.name, trigger: (body.trigger as WorkflowTrigger) || "MANUAL" as WorkflowTrigger, steps: body.steps, createdById: user.id } })
     return buildSuccessResponse(workflow, 201)
   } catch (error) { return handleApiError(error) }
 }
 
 export async function getWorkflowHandler(request: NextRequest, workflowId: string) {
   try {
-    requestLogger(request)
-    rateLimitMiddleware(request)
+    requestLogger(request); rateLimitMiddleware(request)
     const user = await getAuthUser(request)
     const workflow = await getOwnedWorkflow(workflowId, user.id)
     return buildSuccessResponse(workflow)
@@ -65,8 +51,7 @@ export async function getWorkflowHandler(request: NextRequest, workflowId: strin
 
 export async function updateWorkflowHandler(request: NextRequest, workflowId: string) {
   try {
-    requestLogger(request)
-    rateLimitMiddleware(request)
+    requestLogger(request); rateLimitMiddleware(request)
     const user = await getAuthUser(request)
     await getOwnedWorkflow(workflowId, user.id)
     const body = await parseBody<{ name?: string; trigger?: string; steps?: any; status?: string }>(request)
@@ -82,8 +67,7 @@ export async function updateWorkflowHandler(request: NextRequest, workflowId: st
 
 export async function deleteWorkflowHandler(request: NextRequest, workflowId: string) {
   try {
-    requestLogger(request)
-    rateLimitMiddleware(request)
+    requestLogger(request); rateLimitMiddleware(request)
     const user = await getAuthUser(request)
     await getOwnedWorkflow(workflowId, user.id)
     await prisma.workflow.delete({ where: { id: workflowId } })

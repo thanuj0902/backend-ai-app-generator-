@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { listWorkflowsHandler, createWorkflowHandler } from "@/api/workflows"
+import { listWorkflowsHandler, createWorkflowHandler } from "@/modules/workflows"
 
 export async function GET(request: NextRequest) {
   return listWorkflowsHandler(request)

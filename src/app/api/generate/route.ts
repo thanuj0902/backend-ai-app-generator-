@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { startGenerationHandler, listGenerationsHandler } from "@/api/generation"
+import { startGenerationHandler, listGenerationsHandler } from "@/modules/generation"
 
 export async function POST(request: NextRequest) {
   return startGenerationHandler(request)

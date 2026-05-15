@@ -35,6 +35,36 @@ enum GenerationStatus {
   ERROR
 }
 
+enum DeploymentStatus {
+  PENDING
+  BUILDING
+  UPLOADING
+  ACTIVATING
+  ACTIVE
+  FAILED
+  ROLLED_BACK
+}
+
+enum DomainStatus {
+  PENDING
+  ACTIVE
+  FAILED
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum JobType {
+  AI_GENERATION
+  DEPLOYMENT
+  DNS_UPDATE
+  WEBHOOK
+}
+
 model User {
   id        String   @id @default(cuid())
   clerkId   String   @unique
@@ -84,18 +114,25 @@ model Project {
   slug           String?
   description    String?
   status         ProjectStatus @default(DRAFT)
+  deployedUrl    String?
+  subdomain      String?       @unique
   userId         String
   organizationId String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
   workflows    Workflow[]
-  generations Generation[]
+  generations  Generation[]
+  deployments  Deployment[]
+  domains      Domain[]
+  appRoutes    AppRoute[]
+  runtimeConfigs RuntimeConfig[]
 
   @@index([userId])
   @@index([organizationId])
+  @@index([subdomain])
   @@map("projects")
 }
 
@@ -130,8 +167,104 @@ model Generation {
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project    Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deployments Deployment[]
 
   @@index([projectId])
   @@map("generations")
+}
+
+model Deployment {
+  id             String           @id @default(cuid())
+  projectId      String
+  generationId   String?
+  version        Int              @default(1)
+  status         DeploymentStatus @default(PENDING)
+  url            String?
+  environment    Json?
+  errorMessage   String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  generation Generation? @relation(fields: [generationId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([status])
+  @@map("deployments")
+}
+
+model Domain {
+  id          String       @id @default(cuid())
+  projectId   String
+  subdomain   String
+  domain      String?
+  type        String       @default("SUBDOMAIN")
+  status      DomainStatus @default(PENDING)
+  dnsRecordId String?
+  verifiedAt  DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, subdomain])
+  @@index([subdomain])
+  @@map("domains")
+}
+
+model AppRoute {
+  id        String   @id @default(cuid())
+  projectId String
+  path      String
+  type      String   @default("PAGE")
+  method    String?
+  config    Json?
+  priority  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, path])
+  @@index([projectId])
+  @@map("app_routes")
+}
+
+model RuntimeConfig {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  environment Json?
+  variables   Json?
+  features    Json?
+  settings    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("runtime_configs")
+}
+
+model QueueJob {
+  id           String   @id @default(cuid())
+  type         JobType
+  status       JobStatus @default(QUEUED)
+  payload      Json
+  result       Json?
+  errorMessage String?
+  retryCount   Int      @default(0)
+  maxRetries   Int      @default(3)
+  scheduledAt  DateTime @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([scheduledAt])
+  @@map("queue_jobs")
 }
