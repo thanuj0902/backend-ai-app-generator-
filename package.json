@@ -1,31 +1,18 @@
 {
-  "name": "backend-ai-app-generator",
+  "name": "app-generator-platform",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "packages/api",
+    "packages/runtime-deployment"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "setup": "npm install && prisma generate && prisma db push"
-  },
-  "dependencies": {
-    "@clerk/nextjs": "^6.12.0",
-    "@neondatabase/serverless": "^0.10.4",
-    "@prisma/adapter-neon": "^6.1.0",
-    "@prisma/client": "^6.1.0",
-    "@upstash/redis": "^1.38.0",
-    "next": "^15.2.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/react": "19.2.14",
-    "prisma": "^6.1.0",
-    "typescript": "^5.7.0"
+    "dev:api": "npm run dev -w packages/api",
+    "dev:runtime": "npm run dev -w packages/runtime-deployment",
+    "build:api": "npm run build -w packages/api",
+    "build:runtime": "npm run build -w packages/runtime-deployment",
+    "db:generate": "npm run db:generate -w packages/api && npm run db:generate -w packages/runtime-deployment",
+    "db:push": "npm run db:push -w packages/api && npm run db:push -w packages/runtime-deployment",
+    "setup": "npm install && npm run db:generate && npm run db:push"
   }
 }

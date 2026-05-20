@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Deployment {
+  id            String   @id @default(cuid())
+  projectId     String
+  appId         String
+  status        String   @default("pending")
+  url           String?
+  previewUrl    String?
+  subdomain     String?
+  version       Int      @default(1)
+  errorLog      String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  retries    DeploymentRetry[]
+  logs       DeploymentLog[]
+}
+
+model DeploymentRetry {
+  id           String   @id @default(cuid())
+  deploymentId String
+  attempt      Int      @default(1)
+  status       String   @default("pending")
+  errorLog     String?
+  createdAt    DateTime @default(now())
+
+  deployment Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+}
+
+model DeploymentLog {
+  id           String   @id @default(cuid())
+  deploymentId String
+  level        String   @default("info")
+  message      String
+  createdAt    DateTime @default(now())
+
+  deployment Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+}
+
+model RuntimeConfig {
+  id        String   @id @default(cuid())
+  appId     String   @unique
+  projectId String
+  config    Json
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
